@@ -285,7 +285,7 @@
 						<option>macos:-Xdock:name={app}</option>
 					</options>
 					<!-- (fsh's keyboard library and fshexec, from fsh's native jar) -->
-					<nativeFrom>us.bringardner:fsh</nativeFrom>
+					<nativeFrom>us.bringardner:parley-fsh</nativeFrom>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -327,7 +327,7 @@
 		<!-- The interpreter. Brings parley-files-ftp/-sftp at run time. -->
 		<dependency>
 			<groupId>us.bringardner</groupId>
-			<artifactId>fsh</artifactId>
+			<artifactId>parley-fsh</artifactId>
 			<version>${fsh.version}</version>
 		</dependency>
 		<!-- Running and debugging scripts (shared with fshdb; no user interface) -->
@@ -344,7 +344,7 @@
 		</dependency>
 		<dependency>
 			<groupId>us.bringardner</groupId>
-			<artifactId>fsh-loupe</artifactId>
+			<artifactId>parley-fsh-loupe</artifactId>
 			<version>${fsh.version}</version>
 		</dependency>
 		<!-- Used directly: FileSource -->
