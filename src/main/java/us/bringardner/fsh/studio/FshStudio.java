@@ -392,7 +392,7 @@ public class FshStudio extends JFrame  {
 		GradientLook.install(prefs);
 		// the editors' and console's font, apart from the appearance font
 		EditorFonts.load(prefs);
-		// a script named on the command line is the one the window opens (parley fshstudio SCRIPT)
+		// a script named on the command line is the one the window opens (fshstudio SCRIPT)
 		String script = fileArgument(args);
 		EventQueue.invokeLater(()->openWindow(script));
 	}
