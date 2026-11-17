@@ -392,7 +392,14 @@ public class FshStudio extends JFrame  {
 		GradientLook.install(prefs);
 		// the editors' and console's font, apart from the appearance font
 		EditorFonts.load(prefs);
-		EventQueue.invokeLater(()->openWindow());
+		// a script named on the command line is the one the window opens (parley fshstudio SCRIPT)
+		String script = fileArgument(args);
+		EventQueue.invokeLater(()->openWindow(script));
+	}
+
+	/** The script a command line names, or null: its first argument. */
+	static String fileArgument(String[] args) {
+		return args != null && args.length > 0 && !args[0].isEmpty() ? args[0] : null;
 	}
 
 	/** The saved window bounds, or null if missing, unreadable or not on any screen now. */
@@ -433,7 +440,8 @@ public class FshStudio extends JFrame  {
 		return ret;
 	}
 
-	private static void openWindow() {
+	/** @param script the script the window opens; null: the one edited last */
+	private static void openWindow(String script) {
 
 		// Dialogs (new terminal, open remote, new folder...) get the app icon too, not the Java cup
 		ParleyBrand.installDefaultWindowIcons("terminal");
@@ -450,7 +458,7 @@ public class FshStudio extends JFrame  {
 			bar.setIconImage(ParleyBrand.icon(512, "terminal"));
 		}
 		// About, Settings and Quit: in the application menu on macOS (StandardMenus, see buildMenus)
-		FshStudio frame = new FshStudio();
+		FshStudio frame = new FshStudio(script);
 		frame.setIconImages(imageList);
 
 		if( ideWindows.size() > 0 ) {
@@ -733,6 +741,15 @@ public class FshStudio extends JFrame  {
 	 * Create the frame.
 	 */
 	public FshStudio() {
+		this(null);
+	}
+
+	/**
+	 * Create the frame, showing a script.
+	 *
+	 * @param openScript the script's path; null: the one edited last
+	 */
+	FshStudio(String openScript) {
 		editorPane.setHighlightCurrentLine(false);
 
 		recent = RecentFiles.parse(prefs.get(PREF_RECENT_LIST, null));
@@ -1021,12 +1038,12 @@ public class FshStudio extends JFrame  {
 		}
 
 		pruneRecentFiles();
-		String name = recent.first();
+		String name = openScript != null ? openScript : recent.first();
 		if( name != null ) {
 			try {
 				loadFile(FileSourceFactory.getDefaultFactory().createFileSource(name), autoExecuteCheckItem.isSelected());
 			} catch (IOException ex) {
-				showError(ex, "Can't read last edited file = "+name);
+				showError(ex, "Can't read "+(openScript != null ? "" : "last edited file = ")+name);
 			}
 		}
 
@@ -1454,7 +1471,7 @@ public class FshStudio extends JFrame  {
 
 
 	protected void actionNewWindow() {
-		openWindow();
+		openWindow(null);
 
 	}
 
