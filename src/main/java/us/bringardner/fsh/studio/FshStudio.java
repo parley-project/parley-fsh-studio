@@ -55,6 +55,7 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -704,7 +705,12 @@ public class FshStudio extends JFrame  {
 				showSyntaxTree();
 				// a script that doesn't parse keeps the outline it had
 				if( errors.isEmpty()) {
-					outlinePanel.setOutline(ScriptOutline.of(tree));
+					ScriptOutline outline = ScriptOutline.of(tree);
+					outlinePanel.setOutline(outline);
+					// the functions and variables the script defines are completions too
+					editorPane.setScriptNames(
+							outline.getFunctions().stream().map(ScriptOutline.Item::getName).distinct().collect(Collectors.toList()),
+							outline.getVariables().stream().map(ScriptOutline.Item::getName).collect(Collectors.toList()));
 				}
 			});
 		});

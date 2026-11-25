@@ -124,6 +124,7 @@ public class EditorPanel extends JPanel {
 	};
 
 	private List<String> variables = new ArrayList<>();
+	private List<String> functions = new ArrayList<>();
 	private RTextScrollPane scrollPane;
 	
 	private FileSource scriptDir;
@@ -577,7 +578,7 @@ public class EditorPanel extends JPanel {
 		}
 	}
 
-	/** Edit > Complete: the completions (templates and the script's variables) for the word at the caret. */
+	/** Edit > Complete: the completions (templates and the script's functions and variables) for the word at the caret. */
 	public void complete() {
 		if( autoComplete != null ) {
 			autoComplete.doCompletion();
@@ -628,9 +629,22 @@ public class EditorPanel extends JPanel {
 
 
 
+	/**
+	 * The names the script defines, for the completions: its functions and its variables. Rebuilds
+	 * the completions only when they differ from the ones already offered. Call on the event thread.
+	 */
+	public void setScriptNames(List<String> functionNames, List<String> variableNames) {
+		if( functions.equals(functionNames) && variables.equals(variableNames)) {
+			return;
+		}
+		functions = new ArrayList<>(functionNames);
+		variables = new ArrayList<>(variableNames);
+		createAutoComplete();
+	}
+
 	public void createAutoComplete()  {
 
-		DefaultCompletionProvider provider = completionProvider(Configuration.getInstance().getTemplates(), variables);
+		DefaultCompletionProvider provider = completionProvider(Configuration.getInstance().getTemplates(), variables, functions);
 
 		
 		SwingUtilities.invokeLater(new Runnable() {
@@ -658,12 +672,20 @@ public class EditorPanel extends JPanel {
 	 * a few of the if- templates, up to elif's "if-elif-else").
 	 */
 	static DefaultCompletionProvider completionProvider(List<Template> templates, List<String> variables) {
+		return completionProvider(templates, variables, List.of());
+	}
+
+	/** As above, with the script's function names too (offered as name-function, like name-variable). */
+	static DefaultCompletionProvider completionProvider(List<Template> templates, List<String> variables, List<String> functions) {
 		FshCompletionProvider provider = new FshCompletionProvider();
 		for(Template t : templates) {
 			addCompletion(provider, t);
 		}
 		for(String var : variables) {
 			provider.addCompletion(new ShorthandCompletion(provider, var+"-variable", var));
+		}
+		for(String function : functions) {
+			provider.addCompletion(new ShorthandCompletion(provider, function+"-function", function));
 		}
 		provider.sortByName();
 		return provider;

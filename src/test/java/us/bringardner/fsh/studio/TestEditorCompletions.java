@@ -107,4 +107,20 @@ public class TestEditorCompletions {
 				.getListCellRendererComponent(new javax.swing.JList<>(), math, 0, false, false);
 		assertEquals("(( x > 0 )) \u2014 an arithmetic expression isn't zero", shown.getText());
 	}
+
+	/** the script's functions are offered by name, with its variables */
+	@Test
+	public void theScriptsFunctionsAreOffered() {
+		DefaultCompletionProvider provider = EditorPanel.completionProvider(Configuration.createDefault().getTemplates(),
+				List.of("count"), List.of("greet", "goodbye"));
+		List<String> names = new java.util.ArrayList<>();
+		offered(provider, "gr").forEach(c->names.add(c.getReplacementText()));
+		assertEquals(List.of("greet"), names);
+		names.clear();
+		offered(provider, "go").forEach(c->names.add(c.getReplacementText()));
+		assertEquals(List.of("goodbye"), names);
+		names.clear();
+		offered(provider, "cou").forEach(c->names.add(c.getReplacementText()));
+		assertTrue(names.contains("count"), names.toString());
+	}
 }
