@@ -2,6 +2,16 @@
 
 ## 1.1.0 (unreleased)
 
+### Fixed (2026-11-26: a template with a stray $ hung the application)
+
+- A template whose code had a `$` that isn't `$$`, `${name}` or `${|...}` (`echo $HOME`, `$(date)`,
+  a `${` with no `}`) made the autocompletion library loop for ever when it read the template. Pressing
+  OK in Settings > Templates froze the window, and because the template was saved, so did every start
+  after, before the main window showed.
+- Templates > OK refuses such code and says what to write (`$$HOME` for `$HOME`); a template already
+  saved with one is read safely (the `$` is put in as it is typed).
+- The code check under a template's code runs off the event thread.
+
 ### Changed (2026-11-13: the name Fsh Studio everywhere)
 
 - The dark editor theme (`editor-dark.xml`) is beside `EditorColors` again, in

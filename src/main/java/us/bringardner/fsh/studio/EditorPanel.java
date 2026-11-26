@@ -817,13 +817,14 @@ public class EditorPanel extends JPanel {
 	/** Adds t to provider: a template if its code has \${...} fields, otherwise a shorthand. */
 	static void addCompletion(DefaultCompletionProvider provider, Template t) {
 		String name = t.getName();
-		String code = t.getCode();
+		// a "$" the library can't read would make it loop for ever (a saved template may have one)
+		String code = TemplateText.escapeStray(t.getCode());
 		String description = t.getDescription();
 		String d = description == null || description.isBlank() ? name : description;
 		if( code == null || code.isBlank()) {
 			provider.addCompletion(new ShorthandCompletion(provider,name,name,d));
 		} else if( code.indexOf("$") >= 0) {
-			TemplateCompletion tc = new TemplateCompletion(provider, name, d, TemplateText.withoutChoices(code));
+			TemplateCompletion tc = new TemplateCompletion(provider, name, d, TemplateText.escapeStray(TemplateText.withoutChoices(code)));
 			provider.addCompletion(tc);
 			if( provider instanceof FshCompletionProvider ) {
 				((FshCompletionProvider) provider).addChoices(tc, code);

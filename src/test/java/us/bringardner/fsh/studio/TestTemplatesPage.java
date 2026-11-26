@@ -42,15 +42,21 @@ public class TestTemplatesPage {
 	@Test
 	public void editsAddsDeletesAndRestores() throws Exception {
 		Assumptions.assumeFalse(GraphicsEnvironment.isHeadless());
+		TemplatesPage[] shown = new TemplatesPage[1];
 		SwingUtilities.invokeAndWait(()->{
 			TemplatesPage page = new TemplatesPage();
+			shown[0] = page;
 			assertEquals("Templates", page.getTitle());
 			assertEquals(0, page.list().getSelectedIndex());
 			Template first = page.templates().get(0);
 			assertEquals(first.getName(), page.nameField().getText());
 			assertEquals(first.getCode(), page.codeArea().getText());
-			assertTrue(page.checkLabel().getText().contains("parses"), page.checkLabel().getText());
 			assertFalse(page.templates().isChanged(), "showing isn't changing");
+		});
+		// the code is checked off the event thread: the result comes a moment later
+		awaitCheck(shown[0], "parses");
+		SwingUtilities.invokeAndWait(()->{
+			TemplatesPage page = shown[0];
 
 			// typing changes the template
 			page.descriptionField().setText("changed");
@@ -59,7 +65,10 @@ public class TestTemplatesPage {
 
 			// code that doesn't parse says so
 			page.codeArea().setText("if true; then\nfi\n");
-			assertTrue(page.checkLabel().getText().contains("Line 2"), page.checkLabel().getText());
+		});
+		awaitCheck(shown[0], "Line 2");
+		SwingUtilities.invokeAndWait(()->{
+			TemplatesPage page = shown[0];
 
 			// New: selected, named so it can be typed over
 			int before = page.templates().size();
@@ -130,6 +139,36 @@ public class TestTemplatesPage {
 		} finally {
 			SettingsPages.unregister(TemplatesPage.ID);
 		}
+	}
+
+	/** A "$" that isn't a field is refused at once (the library that reads the code would loop for ever). */
+	@Test
+	public void aDollarThatIsNotAFieldIsRefused() throws Exception {
+		Assumptions.assumeFalse(GraphicsEnvironment.isHeadless());
+		SwingUtilities.invokeAndWait(()->{
+			TemplatesPage page = new TemplatesPage();
+			page.actionNew();
+			page.nameField().setText("home");
+			page.codeArea().setText("echo $HOME");
+			assertNotNull(page.problem());
+			assertTrue(page.checkLabel().getText().contains("$$"), page.checkLabel().getText());
+			page.codeArea().setText("echo $$HOME");
+			assertNull(page.problem());
+		});
+	}
+
+	/** Waits (off the event thread) until the check label says text. */
+	private static void awaitCheck(TemplatesPage page, String text) throws Exception {
+		String[] now = new String[1];
+		long end = System.currentTimeMillis() + 20000;
+		while( System.currentTimeMillis() < end ) {
+			SwingUtilities.invokeAndWait(()->now[0] = page.checkLabel().getText());
+			if( now[0].contains(text)) {
+				return;
+			}
+			Thread.sleep(20);
+		}
+		throw new AssertionError("The check never said \"" + text + "\": " + now[0]);
 	}
 
 	private static JTabbedPane find(java.awt.Container c) {

@@ -21,6 +21,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Window;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
@@ -33,6 +35,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -59,7 +62,7 @@ public class TemplatesPage implements SettingsPage {
 	/** What a template's code can have, shown under it. */
 	static final String HINT = "<html><div style='width:420px'>${name} is a field to fill in (fields with the same "
 			+ "name change together), ${|-e : exists|-f : a file} is a field with choices (the first is put in, and the "
-			+ "editor lists them all), ${cursor} is where the caret goes, and $$ is a $.</div></html>";
+			+ "editor lists them all), ${cursor} is where the caret goes, and $$ is a $ (a $ must be one of these: write $$HOME for $HOME).</div></html>";
 
 	private final TemplateList templates = new TemplateList(Configuration.getInstance().getTemplates());
 	private final DefaultListModel<Template> model = new DefaultListModel<>();
@@ -235,12 +238,44 @@ public class TemplatesPage implements SettingsPage {
 		showCheck(t);
 	}
 
+	/** Template checks, one at a time, off the event thread: the parser is the interpreter's, and a long script mustn't stop typing. */
+	private static final ExecutorService CHECKER = Executors.newSingleThreadExecutor(r->{
+		Thread t = new Thread(r, "Templates check");
+		t.setDaemon(true);
+		return t;
+	});
+
+	/** A check's result is shown only if no newer check has been asked for. */
+	private int checkCount;
+
 	/** Whether the code parses, under it. */
 	private void showCheck(Template t) {
-		String c = t == null ? null : TemplateList.check(t);
-		String p = t == null ? null : TemplateList.problem(t);
-		check.setText(p != null ? "⚠ " + p : c == null ? (t == null ? " " : "✓ The code parses")
-				: "⚠ " + c + " (fine if it's only part of a script)");
+		int count = ++checkCount;
+		if( t == null ) {
+			check.setText(" ");
+			return;
+		}
+		String p = TemplateList.problem(t);
+		if( p != null ) {
+			check.setText("⚠ " + p);
+			return;
+		}
+		check.setText("Checking...");
+		CHECKER.execute(()->{
+			String result;
+			try {
+				String c = TemplateList.check(t);
+				result = c == null ? "✓ The code parses" : "⚠ " + c + " (fine if it's only part of a script)";
+			} catch (RuntimeException e) {
+				result = "⚠ The code can't be checked: " + e;
+			}
+			String shown = result;
+			SwingUtilities.invokeLater(()->{
+				if( count == checkCount ) {
+					check.setText(shown);
+				}
+			});
+		});
 	}
 
 	/** The fields changed: the selected template becomes what they say. */

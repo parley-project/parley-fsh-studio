@@ -141,6 +141,109 @@ public final class TemplateText {
 		return out.toString();
 	}
 
+	/**
+	 * What's wrong with a "$" in a template's code, or null: a "$" must be "$$" (a "$"), "${name}" (a
+	 * field) or "${|...}" (a field with choices). Anything else ("echo $HOME", "$(date)", a "${" with no
+	 * "}") makes the autocompletion library loop for ever when it reads the template, so it isn't kept
+	 * (and {@link #escapeStray(String)} makes one that was kept safe).
+	 */
+	public static String problem(String code) {
+		return code == null ? null : scan(code, null);
+	}
+
+	/**
+	 * The code with every "$" that isn't "$$", "${name}" or "${|...}" made a "$$" (a "$"), and a "${"
+	 * with no "}" a "$${": so "echo $HOME" is put in as it is typed. Code that has no such "$" is
+	 * returned as it is.
+	 */
+	public static String escapeStray(String code) {
+		if( code == null || code.indexOf('$') < 0 ) {
+			return code;
+		}
+		StringBuilder fixed = new StringBuilder();
+		scan(code, fixed);
+		return fixed.toString();
+	}
+
+	/**
+	 * Reads the "$"s of code: the first problem as a message (null if none), and, if fixed isn't null,
+	 * the code with each problem escaped. Every "$" is passed or escaped, so it always ends.
+	 */
+	private static String scan(String code, StringBuilder fixed) {
+		String problem = null;
+		int line = 1;
+		int i = 0;
+		while( i < code.length()) {
+			char c = code.charAt(i);
+			if( c == '\n' ) {
+				line++;
+			}
+			if( c != '$' ) {
+				if( fixed != null ) {
+					fixed.append(c);
+				}
+				i++;
+			} else if( code.startsWith("$$", i)) {
+				if( fixed != null ) {
+					fixed.append("$$");
+				}
+				i += 2;
+			} else if( code.startsWith("${|", i)) {
+				int close = choiceParts(code, i+3, new ArrayList<>());
+				if( close < 0 ) {
+					problem = problem != null ? problem : unclosed(line);
+					if( fixed != null ) {
+						fixed.append("$$");
+					}
+					i++;
+				} else {
+					if( fixed != null ) {
+						fixed.append(code, i, close+1);
+					}
+					line += newLines(code, i, close);
+					i = close+1;
+				}
+			} else if( code.startsWith("${", i)) {
+				int close = code.indexOf('}', i+2);
+				if( close < 0 ) {
+					problem = problem != null ? problem : unclosed(line);
+					if( fixed != null ) {
+						fixed.append("$$");
+					}
+					i++;
+				} else {
+					if( fixed != null ) {
+						fixed.append(code, i, close+1);
+					}
+					line += newLines(code, i, close);
+					i = close+1;
+				}
+			} else {
+				problem = problem != null ? problem : "Line " + line
+						+ ": a $ that isn't a field: write $$ for a $ (\"echo $$HOME\") or ${name} for a field";
+				if( fixed != null ) {
+					fixed.append("$$");
+				}
+				i++;
+			}
+		}
+		return problem;
+	}
+
+	private static String unclosed(int line) {
+		return "Line " + line + ": a \"${\" with no closing \"}\": write $${ for a literal ${";
+	}
+
+	private static int newLines(String code, int from, int to) {
+		int n = 0;
+		for(int i = from; i <= to; i++) {
+			if( code.charAt(i) == '\n' ) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	/** The choices of a field from at (after "${|") to its "}", into parts: the "}"'s index, or -1. */
 	private static int choiceParts(String code, int at, List<String> parts) {
 		StringBuilder part = new StringBuilder();
