@@ -8,8 +8,8 @@
   a `${` with no `}`) made the autocompletion library loop for ever when it read the template. Pressing
   OK in Settings > Templates froze the window, and because the template was saved, so did every start
   after, before the main window showed.
-- Templates > OK refuses such code and says what to write (`$$HOME` for `$HOME`); a template already
-  saved with one is read safely (the `$` is put in as it is typed).
+- Such a `$` is put in as it is typed (it is a `$$` to the library), also in a template saved before, so
+  `echo $HOME` is fine and a saved template can't stop the application from starting.
 - The code check under a template's code runs off the event thread.
 
 ### Changed (2026-11-13: the name Fsh Studio everywhere)

@@ -101,10 +101,7 @@ public final class TemplateList {
 		return items.indexOf(t);
 	}
 
-	/**
-	 * What's wrong with a template so it can't be kept, or null: it needs a name, without spaces, and
-	 * a "$" in its code is "$$", "${name}" or "${|...}" ({@link TemplateText#problem(String)}).
-	 */
+	/** What's wrong with a template so it can't be kept, or null: it needs a name, without spaces. */
 	public static String problem(Template t) {
 		if( t.getName() == null || t.getName().isBlank() ) {
 			return "A template needs a name: it's what you type to use it.";
@@ -112,7 +109,7 @@ public final class TemplateList {
 		if( t.getName().chars().anyMatch(Character::isWhitespace) ) {
 			return "A template's name can't have spaces: it's what you type to use it.";
 		}
-		return TemplateText.problem(t.getCode());
+		return null;
 	}
 
 	/**

@@ -197,20 +197,10 @@ public class TestTemplates {
 		assertEquals(List.of("if-file", "if-files"), names);
 	}
 
-	/** "echo $HOME" made the autocompletion library loop for ever: a "$" must be $$, ${name} or ${|...} */
+	/** "echo $HOME" made the autocompletion library loop for ever: a "$" must be $$, ${name} or ${|...} to it */
 	@Test
-	public void aDollarThatIsNotAFieldIsAProblemAndCanBeEscaped() {
-		assertNull(TemplateText.problem(null));
-		assertNull(TemplateText.problem("echo hello"));
-		assertNull(TemplateText.problem("echo $$HOME ${a} ${|-e : exists|-f : a file}${cursor}"));
-		assertEquals("Line 1: a $ that isn't a field: write $$ for a $ (\"echo $$HOME\") or ${name} for a field",
-				TemplateText.problem("echo $HOME"));
-		assertTrue(TemplateText.problem("a\nb $(date)").startsWith("Line 2: "));
-		assertTrue(TemplateText.problem("echo ${a").contains("no closing"));
-		assertTrue(TemplateText.problem("echo ${|-e : x").contains("no closing"));
-		assertTrue(TemplateText.problem("echo ${a}\n${b").startsWith("Line 2: "));
-		assertTrue(TemplateText.problem("cost: 5$") != null, "a $ at the end");
-
+	public void aDollarThatIsNotAFieldIsEscaped() {
+		assertNull(TemplateText.escapeStray(null));
 		assertEquals("echo $$HOME", TemplateText.escapeStray("echo $HOME"));
 		assertEquals("$$(date) ${a} $${b}", TemplateText.escapeStray("$(date) ${a} $${b}"));
 		assertEquals("echo $${a", TemplateText.escapeStray("echo ${a"));
@@ -220,14 +210,13 @@ public class TestTemplates {
 		assertEquals(fine, TemplateText.escapeStray(fine), "nothing to escape: as it is");
 		assertEquals(fine, TemplateText.escapeStray(TemplateText.escapeStray(fine)));
 		String fixed = TemplateText.escapeStray("echo $HOME ${x");
+		assertEquals("echo $$HOME $${x", fixed);
 		assertEquals(fixed, TemplateText.escapeStray(fixed), "escaping is done once");
-		assertNull(TemplateText.problem(fixed));
 		// the escaped code is the typed text
 		assertEquals("echo $HOME ${x", TemplateText.expand(fixed).text);
 
 		// the built-in templates are fine as they are
 		for(Template t : Configuration.createDefault().getTemplates()) {
-			assertNull(TemplateList.problem(t), t.getName() + ": " + t.getDescription());
 			assertEquals(t.getCode(), TemplateText.escapeStray(t.getCode()));
 		}
 	}

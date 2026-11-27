@@ -62,7 +62,7 @@ public class TemplatesPage implements SettingsPage {
 	/** What a template's code can have, shown under it. */
 	static final String HINT = "<html><div style='width:420px'>${name} is a field to fill in (fields with the same "
 			+ "name change together), ${|-e : exists|-f : a file} is a field with choices (the first is put in, and the "
-			+ "editor lists them all), ${cursor} is where the caret goes, and $$ is a $ (a $ must be one of these: write $$HOME for $HOME).</div></html>";
+			+ "editor lists them all), ${cursor} is where the caret goes, and $$ is a $ (so is a $ that isn't a field, as in $HOME).</div></html>";
 
 	private final TemplateList templates = new TemplateList(Configuration.getInstance().getTemplates());
 	private final DefaultListModel<Template> model = new DefaultListModel<>();

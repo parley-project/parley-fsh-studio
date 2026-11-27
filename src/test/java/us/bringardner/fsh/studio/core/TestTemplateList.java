@@ -57,11 +57,9 @@ public class TestTemplateList {
 		assertNotNull(TemplateList.problem(new Template("", "d", "echo")));
 		assertNotNull(TemplateList.problem(new Template("two words", "d", "echo")));
 		assertNull(TemplateList.problem(new Template("ok", "d", "echo")));
-		// a "$" that isn't $$, ${name} or ${|...} would make the autocompletion library loop for ever
-		assertNotNull(TemplateList.problem(new Template("ok", "d", "echo $HOME")));
-		assertNotNull(TemplateList.problem(new Template("ok", "d", "echo $(date)")));
-		assertNotNull(TemplateList.problem(new Template("ok", "d", "echo ${unclosed")));
-		assertNotNull(TemplateList.problem(new Template("ok", "d", "echo ${|-e : exists|-f : a file")));
+		// a "$" that isn't a field is fine (it's put in as it is typed)
+		assertNull(TemplateList.problem(new Template("ok", "d", "echo $HOME")));
+		assertNull(TemplateList.problem(new Template("ok", "d", "echo $h $(date) ${unclosed")));
 		assertNull(TemplateList.problem(new Template("ok", "d", "echo $$HOME ${name} ${|-e : exists|-f : a file} ${cursor}")));
 		assertNull(TemplateList.check(new Template("ok", "d", "if [ ${c} ]; then\n  echo\nfi\n")));
 		String c = TemplateList.check(new Template("bad", "d", "if [ ${c} ]; then\nfi\n"));

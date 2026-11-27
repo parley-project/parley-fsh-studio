@@ -141,20 +141,20 @@ public class TestTemplatesPage {
 		}
 	}
 
-	/** A "$" that isn't a field is refused at once (the library that reads the code would loop for ever). */
+	/** A "$" that isn't a field is fine: it's put in as typed (the library that reads the code would loop for ever on it). */
 	@Test
-	public void aDollarThatIsNotAFieldIsRefused() throws Exception {
+	public void aDollarThatIsNotAFieldIsKept() throws Exception {
 		Assumptions.assumeFalse(GraphicsEnvironment.isHeadless());
+		TemplatesPage[] shown = new TemplatesPage[1];
 		SwingUtilities.invokeAndWait(()->{
 			TemplatesPage page = new TemplatesPage();
+			shown[0] = page;
 			page.actionNew();
 			page.nameField().setText("home");
-			page.codeArea().setText("echo $HOME");
-			assertNotNull(page.problem());
-			assertTrue(page.checkLabel().getText().contains("$$"), page.checkLabel().getText());
-			page.codeArea().setText("echo $$HOME");
+			page.codeArea().setText("echo $h");
 			assertNull(page.problem());
 		});
+		awaitCheck(shown[0], "parses");
 	}
 
 	/** Waits (off the event thread) until the check label says text. */
